@@ -1,0 +1,5 @@
+{
+  "name": "ESP32 FlashOps",
+  "description": "A professional web-based flashing tool for ESP32/S3 devices.",
+  "requestFramePermissions": []
+}
