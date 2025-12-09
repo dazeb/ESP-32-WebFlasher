@@ -6,6 +6,7 @@ export interface Firmware {
   author: string;
   tags: string[];
   compatibility: ('ESP32' | 'ESP32-S3' | 'ESP32-C3' | 'Flipper Zero')[];
+  file?: File;
 }
 
 export interface LogEntry {

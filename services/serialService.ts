@@ -2,6 +2,14 @@
 // Note: Actual binary flashing requires a complex state machine (like esptool-js).
 // We will implement the CONNECTION and SERIAL MONITOR aspects, and simulate the flashing progress.
 
+export interface SerialPort {
+  open(options: { baudRate: number }): Promise<void>;
+  close(): Promise<void>;
+  readable: ReadableStream | null;
+  writable: WritableStream | null;
+  getInfo(): { usbVendorId?: number; usbProductId?: number };
+}
+
 export class SerialService {
   private port: SerialPort | null = null;
   private reader: ReadableStreamDefaultReader | null = null;
@@ -10,19 +18,27 @@ export class SerialService {
   private decoder = new TextDecoder();
   private keepReading = false;
 
-  public async connect(baudRate: number = 115200, autoDetect: boolean = false): Promise<number | null> {
+  public async getPorts(): Promise<SerialPort[]> {
+    if (!('serial' in navigator)) {
+      return [];
+    }
+    return await navigator.serial.getPorts();
+  }
+
+  public getPort(): SerialPort | null {
+    return this.port;
+  }
+
+  public async connect(baudRate: number = 115200, autoDetect: boolean = false, port?: SerialPort): Promise<number | null> {
     if (!('serial' in navigator)) {
       throw new Error('Web Serial API not supported in this browser.');
     }
 
     try {
-      this.port = await navigator.serial.requestPort();
+      this.port = port || await navigator.serial.requestPort();
       
       if (autoDetect) {
         // Attempt to "detect" by trying the standard ESP32 boot rate first.
-        // In a real scenario, this might involve more complex handshakes.
-        // If the standard rate works, we use it. If open() throws (e.g. device rejects it),
-        // we catch and proceed to the user-selected fallback.
         try {
             await this.port.open({ baudRate: 115200 });
             return 115200;
@@ -42,7 +58,7 @@ export class SerialService {
     }
   }
 
-  public async disconnect() {
+  public async disconnect(keepPortReference: boolean = false) {
     this.keepReading = false;
     if (this.reader) {
       await this.reader.cancel();
@@ -54,7 +70,9 @@ export class SerialService {
     }
     if (this.port) {
       await this.port.close();
-      this.port = null;
+      if (!keepPortReference) {
+        this.port = null;
+      }
     }
   }
 
@@ -94,19 +112,21 @@ export class SerialService {
   }
 }
 
-// Minimal type definitions for Web Serial API if not present in environment
-interface SerialPort {
-  open(options: { baudRate: number }): Promise<void>;
-  close(): Promise<void>;
-  readable: ReadableStream | null;
-  writable: WritableStream | null;
-}
-
 declare global {
   interface Navigator {
     serial: {
       requestPort(options?: { filters: any[] }): Promise<SerialPort>;
       getPorts(): Promise<SerialPort[]>;
+      addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | AddEventListenerOptions
+      ): void;
+      removeEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | EventListenerOptions
+      ): void;
     };
   }
 }
