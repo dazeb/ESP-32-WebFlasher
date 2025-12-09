@@ -26,22 +26,22 @@ The application runs entirely in the client's browser. It uses the browser's acc
 
 ```mermaid
 graph TD
-    User[👤 User] -->|1. Select Device/FW| UI[💻 FlashOps UI]
-    User -->|2. Connect USB| USB[🔌 USB Controller]
+    User("👤 User") -->|"1. Select Device/FW"| UI("💻 FlashOps UI")
+    User -->|"2. Connect USB"| USB("🔌 USB Controller")
     
-    subgraph Browser Context
-        UI -->|Request Port| WebSerial[Web Serial API]
-        UI -->|Load Binary| ESPTool[esptool-js Logic]
+    subgraph BrowserContext ["Browser Context"]
+        UI -->|"Request Port"| WebSerial("Web Serial API")
+        UI -->|"Load Binary"| ESPTool("esptool-js Logic")
     end
     
-    WebSerial <-->|Permission Grant| BrowserPrompt[Browser Picker]
-    BrowserPrompt -.->|Authorized| USB
+    WebSerial <-->|"Permission Grant"| BrowserPrompt("Browser Picker")
+    BrowserPrompt -.->|"Authorized"| USB
     
-    USB <-->|Serial Data (TX/RX)| Bootloader[🤖 ESP32 ROM Bootloader]
+    USB <-->|"Serial Data (TX/RX)"| Bootloader("🤖 ESP32 ROM Bootloader")
     
-    ESPTool -->|Slip Encoded Packets| WebSerial
-    Bootloader -->|Acks/Logs| WebSerial
-    WebSerial -->|Update UI| UI
+    ESPTool -->|"Slip Encoded Packets"| WebSerial
+    Bootloader -->|"Acks/Logs"| WebSerial
+    WebSerial -->|"Update UI"| UI
 ```
 
 ---
@@ -86,7 +86,7 @@ You have three options:
 ### 3. Flash Firmware
 1.  Once connected, the status will turn green.
 2.  Click the blue **"FLASH FIRMWARE"** button.
-3.  **Important**: If the connection fails immediately, you may need to hold the **BOOT** button on your ESP32 while clicking Flash to enter download mode manually.
+3.  **Important**: If the connection fails immediately, you may need to hold the **BOOT** button on your ESP32 board while clicking Flash to enter download mode manually.
 4.  Watch the progress bar and terminal logs.
 
 ### 4. Monitor
