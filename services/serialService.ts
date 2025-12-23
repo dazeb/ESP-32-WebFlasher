@@ -22,7 +22,12 @@ export class SerialService {
     if (!('serial' in navigator)) {
       return [];
     }
-    return await navigator.serial.getPorts();
+    try {
+      return await navigator.serial.getPorts();
+    } catch (e) {
+      console.warn('Failed to get authorized ports (likely permissions policy):', e);
+      return [];
+    }
   }
 
   public getPort(): SerialPort | null {
@@ -38,18 +43,35 @@ export class SerialService {
       this.port = port || await navigator.serial.requestPort();
       
       if (autoDetect) {
-        // Attempt to "detect" by trying the standard ESP32 boot rate first.
-        try {
-            await this.port.open({ baudRate: 115200 });
-            return 115200;
-        } catch (e) {
-            console.warn('Auto-detect at 115200 failed, attempting fallback.', e);
-            // Ensure port is fully closed before retrying if needed
-            if (this.port.readable) await this.port.close();
+        // Attempt to "detect" by trying a range of common rates.
+        // Prioritized by likelihood for modern ESP32/Embedded work vs legacy.
+        const candidates = [115200, 921600, 57600, 38400, 19200, 9600, 4800];
+        
+        for (const rate of candidates) {
+            try {
+                // Ensure port is closed before trying to open (in case of retry loop issues)
+                if (this.port.readable) {
+                    await this.port.close();
+                }
+
+                await this.port.open({ baudRate: rate });
+                // If successful, return this rate
+                return rate;
+            } catch (e) {
+                 console.warn(`Auto-detect at ${rate} failed.`, e);
+                 // The port might be in an inconsistent state or just failed to open.
+                 // Continue to next candidate.
+            }
         }
+        console.warn('All auto-detect candidates failed, attempting fallback to selected rate.');
       }
 
       // Fallback (or default choice if autoDetect is false)
+      // Ensure port is closed before trying fallback
+      if (this.port.readable) {
+          await this.port.close();
+      }
+      
       await this.port.open({ baudRate });
       return baudRate;
     } catch (err) {

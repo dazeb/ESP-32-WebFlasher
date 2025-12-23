@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from "../types";
 
@@ -5,14 +6,15 @@ import { ChatMessage } from "../types";
 // Realistically in a "Select Key" flow, we might need to recreate this.
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Use gemini-3-flash-preview for basic text tasks as per updated guidelines
 export const generateFirmwareAdvice = async (
   query: string,
   history: ChatMessage[] = []
 ): Promise<{ text: string; groundingChunks?: any[] }> => {
   const ai = getAI();
   
-  // Using gemini-2.5-flash with googleSearch for up-to-date info on firmwares
-  const model = 'gemini-2.5-flash';
+  // Using gemini-3-flash-preview with googleSearch for up-to-date info on firmwares
+  const model = 'gemini-3-flash-preview';
   
   // Construct a simple history string or just send the query if chat interface is simple
   // For this implementation, we'll just send the current query with a system instruction context
@@ -37,6 +39,7 @@ export const generateFirmwareAdvice = async (
   }
 };
 
+// Use gemini-3-pro-image-preview for high-quality image generation
 export const generateBootLogo = async (
   prompt: string,
   size: '1K' | '2K' | '4K'
@@ -71,6 +74,7 @@ export const generateBootLogo = async (
     });
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
+      // Find the image part in the response
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
       }
